@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
         train_size = 1 - (args.valid_ratio + args.test_ratio)
         test_size = args.test_ratio
-        val_size = args.val_ratio
+        val_size = args.valid_ratio
         batch_size = args.batch_size
 
         dataset.shuffle()
