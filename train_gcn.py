@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.datasets import TUDataset
 from torch_geometric.loader import DataLoader
+from torch_geometric.transforms import OneHotDegree
 from gcn import GCN
 
 torch.autograd.set_detect_anomaly(True)
@@ -133,14 +134,18 @@ if __name__ == "__main__":
 
         # load data
         d_name = args.dataset
+        if d_name == "IMDB-BINARY":
+          transforms = OneHotDegree(1000)
+        else:
+          transforms = None
         path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data', d_name)
-        dataset = TUDataset(path, d_name)
+        dataset = TUDataset(path, d_name, transform=transforms)
 
         if args.dataset == "PROTEINS":
             K = [0, 371, 742, 1113]
         elif args.dataset == "PTC_MR":
             K = [0, 115, 230, 344]
-        elif args.dataset == "IMDBBINARY":
+        elif args.dataset == "IMDB-BINARY":
             K = [0, 333, 666, 1000]
         elif args.dataset == "DD":
             K = [0, 393, 785, 1178]
@@ -160,8 +165,8 @@ if __name__ == "__main__":
         ranges["tail"] = list(set(values[K[2]:K[3]]))
 
         train_size = 1 - (args.valid_ratio + args.test_ratio)
-        test_size = args.valid_ratio
-        val_size = args.test_ratio
+        test_size = args.test_ratio
+        val_size = args.val_ratio
         batch_size = args.batch_size
 
         dataset.shuffle()
@@ -180,6 +185,11 @@ if __name__ == "__main__":
         val_loader = DataLoader(dataset=dataset[int(total_graphs * train_size) + int(total_graphs * test_size):],
                                 batch_size=batch_size,
                                 shuffle=True)
+        print("TRAIN: ", len(dataset[:int(total_graphs * train_size)]))
+        print("TEST: ", len(dataset[int(total_graphs * train_size): int(total_graphs * train_size) +
+                                                                                 int(total_graphs * test_size)]))
+        print("VAL: ", len(dataset[int(total_graphs * train_size) + int(total_graphs * test_size):]))
+
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = GCN(dataset=dataset,
